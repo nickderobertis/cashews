@@ -32,7 +32,39 @@ async def test_lock_cache_parallel_with_ttl(cache):
     for _ in range(2):
         await asyncio.gather(*[func() for _ in range(10)])
 
-    assert mock.call_count == 20
+    assert mock.call_count == 1
+
+
+async def test_lock_cache_parallel_with_cache_ttl(cache):
+    mock = Mock()
+
+    @cache(ttl=0.011, protected=False)
+    @cache.locked(ttl=1)
+    async def func2():
+        await asyncio.sleep(0.01)
+        mock()
+
+    for _ in range(2):
+        await asyncio.gather(*[func2() for _ in range(10)])
+        await asyncio.sleep(0.015)
+
+    assert mock.call_count == 1
+
+
+async def test_lock_cache_parallel_with_cache_no_ttl(cache):
+    mock = Mock()
+
+    @cache(ttl=None, protected=False)
+    @cache.locked(ttl=1)
+    async def func3():
+        await asyncio.sleep(0.01)
+        mock()
+
+    for _ in range(2):
+        await asyncio.gather(*[func3() for _ in range(10)])
+        await asyncio.sleep(0.015)
+
+    assert mock.call_count == 1
 
 
 async def test_lock_cache_iterator(cache):

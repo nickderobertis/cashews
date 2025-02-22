@@ -206,10 +206,24 @@ async def test_multilayer_cache(cache: Cache):
     assert await cache.get("key2") == "test2"
 
 
+async def test_cache_no_lock(cache: Cache):
+    m = Mock()
+
+    @cache(ttl=3, lock=False, protected=False)
+    async def my_func(val=1):
+        await asyncio.sleep(0.01)
+        m(val)
+        return val
+
+    await asyncio.gather(my_func(), my_func(), my_func())
+
+    assert m.call_count == 3
+
+
 async def test_cache_lock(cache: Cache):
     m = Mock()
 
-    @cache(ttl=3, lock=True)
+    @cache(ttl=3, lock=True, protected=False)
     async def my_func(val=1):
         await asyncio.sleep(0)  # for task switching
         m(val)
