@@ -234,6 +234,21 @@ async def test_cache_lock(cache: Cache):
     m.assert_called_once_with(1)
 
 
+async def test_cache_lock_expire(cache):
+    mock = Mock()
+
+    @cache(ttl=0.1, lock=True, protected=False)
+    async def func2():
+        await asyncio.sleep(0.01)
+        mock()
+
+    for _ in range(2):
+        await asyncio.gather(*[func2() for _ in range(10)])
+        await asyncio.sleep(0.2)
+
+    assert mock.call_count == 2
+
+
 _cache = Cache()
 _cache.setup("mem://")
 
